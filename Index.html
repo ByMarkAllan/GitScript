@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0B0F19" />
+  <title>GitScript</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            app: '#0B0F19',
+            panel: '#161B26',
+            line: '#252B39'
+          },
+          boxShadow: {
+            soft: '0 18px 55px rgba(0,0,0,.28)',
+            indigo: '0 0 0 1px rgba(99,102,241,.22), 0 12px 30px rgba(79,70,229,.18)',
+            emerald: '0 0 18px rgba(16,185,129,.24)'
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+            mono: ['JetBrains Mono', 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    html { color-scheme: dark; }
+    body { background: #0B0F19; }
+    * { scrollbar-width: thin; scrollbar-color: #334155 #0B0F19; }
+    *::-webkit-scrollbar { width: 9px; height: 9px; }
+    *::-webkit-scrollbar-track { background: #0B0F19; }
+    *::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; border: 2px solid #0B0F19; }
+    ::selection { background: rgba(99,102,241,.42); color: #fff; }
+    .noise-grid {
+      background-image:
+        linear-gradient(rgba(148,163,184,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148,163,184,.035) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(to bottom, black 0%, rgba(0,0,0,.6) 55%, transparent 100%);
+      pointer-events: none;
+    }
+    .field-control:focus-within {
+      border-color: rgba(99,102,241,.72);
+      box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+    }
+    .switch-input:checked + .switch-track { background: #6366F1; }
+    .switch-input:checked + .switch-track .switch-thumb { transform: translateX(1.25rem); }
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+      -webkit-text-fill-color: #e2e8f0;
+      -webkit-box-shadow: 0 0 0 1000px #0f1420 inset;
+      transition: background-color 9999s ease-in-out 0s;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans text-slate-100 antialiased">
+  <div class="noise-grid fixed inset-0 z-0"></div>
+  <div class="pointer-events-none fixed inset-x-0 top-0 z-0 h-80 bg-[radial-gradient(circle_at_48%_-30%,rgba(99,102,241,.18),transparent_58%)]"></div>
+
+  <div class="relative z-10 min-h-screen">
+    <header class="sticky top-0 z-30 border-b border-white/[0.06] bg-app/80 backdrop-blur-xl">
+      <div class="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex min-w-0 items-center gap-3 sm:gap-4">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-indigo-400/20 bg-indigo-500/10 shadow-indigo">
+            <i data-lucide="workflow" class="h-5 w-5 text-indigo-400"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h1 class="truncate text-sm font-semibold tracking-tight text-white sm:text-base">⚡ GitScript</h1>
+              <span class="hidden rounded-md border border-white/[0.07] bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px] text-slate-500 sm:inline">v1.2</span>
+            </div>
+            <div class="mt-1 flex items-center gap-2 text-xs text-slate-500">
+              <span class="relative flex h-2 w-2">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50"></span>
+                <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-emerald"></span>
+              </span>
+              <span class="hidden sm:inline">Active Pipeline Gateway</span>
+              <span class="sm:hidden">Gateway Active</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="profileButton" type="button" class="group flex min-w-0 items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-left transition-all duration-200 ease-in-out hover:border-white/[0.12] hover:bg-white/[0.045] focus:outline-none focus:ring-2 focus:ring-indigo-500/30" aria-label="Connected Google profile">
+          <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 ring-1 ring-white/10">
+            <i data-lucide="user-round" class="h-3.5 w-3.5 text-slate-400"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="hidden text-[10px] uppercase tracking-[.14em] text-slate-600 sm:block">Google Profile</p>
+            <p id="profileEmail" class="max-w-[145px] truncate text-xs font-medium text-slate-300 sm:max-w-[230px]">Connecting…</p>
+          </div>
+        </button>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+      <div class="mb-7 flex flex-col justify-between gap-4 border-b border-white/[0.06] pb-6 sm:flex-row sm:items-end">
+        <div>
+          <div class="mb-2 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[.18em] text-indigo-400/80">
+            <span>Cloud Bridge</span>
+            <span class="h-px w-7 bg-indigo-500/35"></span>
+            <span>Control Plane</span>
+          </div>
+          <h2 class="max-w-3xl text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Map Apps Script projects to GitHub repositories.</h2>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Configure project routes, initialize repository mappings, and trigger clean source pushes from a single self-hosted control surface.</p>
+        </div>
+        <div class="flex items-center gap-2 self-start rounded-lg border border-white/[0.06] bg-white/[0.025] px-3 py-2 font-mono text-[11px] text-slate-500 sm:self-auto">
+          <i data-lucide="shield-check" class="h-3.5 w-3.5 text-emerald-400"></i>
+          Credentials stay server-side
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-6 xl:grid-cols-12 xl:gap-7">
+        <!-- LEFT: SETUP WIZARD -->
+        <section class="xl:col-span-5" aria-labelledby="setupTitle">
+          <div class="overflow-hidden rounded-2xl border border-white/[0.07] bg-panel/90 shadow-soft backdrop-blur-sm">
+            <div class="border-b border-white/[0.06] px-5 py-5 sm:px-6">
+              <div class="flex items-start gap-3">
+                <div class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl border border-indigo-400/20 bg-indigo-500/10">
+                  <i data-lucide="git-fork" class="h-4 w-4 text-indigo-400"></i>
+                </div>
+                <div>
+                  <p class="font-mono text-[10px] uppercase tracking-[.16em] text-slate-600">Setup Wizard</p>
+                  <h3 id="setupTitle" class="mt-1 text-base font-semibold tracking-tight text-white">Configure New Integration Map</h3>
+                </div>
+              </div>
+            </div>
+
+            <form id="mappingForm" class="space-y-5 p-5 sm:p-6" novalidate>
+              <div>
+                <label for="nickname" class="mb-2 block text-xs font-medium text-slate-300">Project Nickname</label>
+                <div class="field-control flex items-center rounded-xl border border-white/[0.08] bg-[#0F1420] transition-all duration-200">
+                  <i data-lucide="tag" class="ml-3.5 h-4 w-4 shrink-0 text-slate-600"></i>
+                  <input id="nickname" name="nickname" type="text" autocomplete="off" required placeholder="e.g. Client Portal Production" class="w-full bg-transparent px-3.5 py-3 text-sm text-slate-200 outline-none placeholder:text-slate-700" />
+                </div>
+              </div>
+
+              <div>
+                <label for="gasProjectLink" class="mb-2 block text-xs font-medium text-slate-300">GAS Project Link</label>
+                <div class="field-control flex items-center rounded-xl border border-white/[0.08] bg-[#0F1420] transition-all duration-200">
+                  <i data-lucide="braces" class="ml-3.5 h-4 w-4 shrink-0 text-slate-600"></i>
+                  <input id="gasProjectLink" name="gasProjectLink" type="text" spellcheck="false" autocomplete="off" required placeholder="Paste Apps Script editor URL or Script ID" class="w-full bg-transparent px-3.5 py-3 font-mono text-xs text-slate-200 outline-none placeholder:font-sans placeholder:text-sm placeholder:text-slate-700" />
+                </div>
+                <div class="mt-2 flex items-start gap-2 text-[11px] leading-5 text-slate-600">
+                  <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0"></i>
+                  <span>Paste the Apps Script editor URL or Project Settings → Script ID. Deployed Web App URLs (AKfy…) are not valid project IDs.</span>
+                </div>
+              </div>
+
+              <div>
+                <label for="repository" class="mb-2 block text-xs font-medium text-slate-300">Target GitHub Repo</label>
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <div class="field-control relative flex items-center rounded-xl border border-white/[0.08] bg-[#0F1420] transition-all duration-200">
+                    <i data-lucide="github" class="ml-3.5 h-4 w-4 shrink-0 text-slate-600"></i>
+                    <select id="repository" name="repository" required class="w-full appearance-none bg-transparent py-3 pl-3.5 pr-10 text-sm text-slate-300 outline-none disabled:cursor-wait disabled:text-slate-600">
+                      <option value="">Loading repositories…</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="pointer-events-none absolute right-3.5 h-4 w-4 text-slate-600"></i>
+                  </div>
+                  <button id="newRepoButton" type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-white/[0.08] bg-white/[0.035] px-4 py-3 text-xs font-medium text-slate-300 transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-white/[0.06] hover:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                    <i data-lucide="folder-plus" class="h-4 w-4"></i>
+                    <span>+ New Repository</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label for="branch" class="mb-2 block text-xs font-medium text-slate-300">Target Branch</label>
+                <div class="field-control flex max-w-xs items-center rounded-xl border border-white/[0.08] bg-[#0F1420] transition-all duration-200">
+                  <span class="ml-3.5 font-mono text-xs text-emerald-500/70">git:</span>
+                  <input id="branch" name="branch" type="text" value="main" spellcheck="false" required class="min-w-0 flex-1 bg-transparent px-2.5 py-3 font-mono text-xs text-slate-200 outline-none" />
+                  <i data-lucide="git-branch" class="mr-3.5 h-4 w-4 text-slate-600"></i>
+                </div>
+              </div>
+
+              <div id="formError" class="hidden rounded-xl border border-rose-500/20 bg-rose-500/[0.07] px-4 py-3 text-xs leading-5 text-rose-300" role="alert"></div>
+
+              <button id="initializeButton" type="submit" class="group inline-flex w-full items-center justify-center gap-2.5 rounded-xl bg-indigo-500 px-4 py-3.5 text-sm font-semibold text-white shadow-indigo transition-all duration-200 ease-in-out hover:scale-[1.015] hover:bg-indigo-400 active:scale-[.99] disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400 disabled:shadow-none disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 focus:ring-offset-2 focus:ring-offset-panel">
+                <i data-lucide="plug-zap" class="h-4 w-4 transition-transform duration-200 group-hover:rotate-6"></i>
+                <span>Initialize Mapping</span>
+              </button>
+            </form>
+          </div>
+
+          <div class="mt-4 grid grid-cols-3 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
+            <div class="px-3 py-3 text-center">
+              <p class="font-mono text-[10px] uppercase tracking-wider text-slate-700">Source</p>
+              <p class="mt-1 text-[11px] font-medium text-slate-500">Apps Script</p>
+            </div>
+            <div class="border-x border-white/[0.06] px-3 py-3 text-center">
+              <p class="font-mono text-[10px] uppercase tracking-wider text-slate-700">Transport</p>
+              <p class="mt-1 text-[11px] font-medium text-slate-500">Cloud API</p>
+            </div>
+            <div class="px-3 py-3 text-center">
+              <p class="font-mono text-[10px] uppercase tracking-wider text-slate-700">Target</p>
+              <p class="mt-1 text-[11px] font-medium text-slate-500">GitHub</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT: CONTROL DASHBOARD -->
+        <section class="xl:col-span-7" aria-labelledby="streamsTitle">
+          <div class="mb-4 flex items-end justify-between gap-4 px-1">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 id="streamsTitle" class="text-base font-semibold tracking-tight text-white">Integration Streams</h3>
+                <span id="streamCount" class="rounded-md border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 font-mono text-[10px] text-slate-500">—</span>
+              </div>
+              <p class="mt-1 text-xs text-slate-600">Manage active, inactive, archived, and scheduled project mappings.</p>
+            </div>
+            <button id="refreshStreamsButton" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-slate-500 transition-all duration-200 ease-in-out hover:border-white/[0.12] hover:bg-white/[0.05] hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" aria-label="Refresh integration streams" title="Refresh streams">
+              <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+            </button>
+          </div>
+
+          <div id="streamsContainer" class="space-y-3" aria-live="polite">
+            <div class="rounded-2xl border border-white/[0.07] bg-panel/85 p-5">
+              <div class="animate-pulse space-y-4">
+                <div class="flex justify-between gap-5">
+                  <div class="space-y-2">
+                    <div class="h-4 w-40 rounded bg-slate-800"></div>
+                    <div class="h-3 w-64 max-w-full rounded bg-slate-800/70"></div>
+                  </div>
+                  <div class="h-9 w-24 rounded-lg bg-slate-800"></div>
+                </div>
+                <div class="h-px bg-white/[0.04]"></div>
+                <div class="h-3 w-52 rounded bg-slate-800/60"></div>
+              </div>
+            </div>
+            <div class="rounded-2xl border border-white/[0.07] bg-panel/85 p-5 opacity-70">
+              <div class="animate-pulse space-y-4">
+                <div class="flex justify-between gap-5">
+                  <div class="space-y-2">
+                    <div class="h-4 w-32 rounded bg-slate-800"></div>
+                    <div class="h-3 w-56 max-w-full rounded bg-slate-800/70"></div>
+                  </div>
+                  <div class="h-9 w-24 rounded-lg bg-slate-800"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- REPOSITORY BUILDER MODAL -->
+  <div id="repositoryModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="repoModalTitle">
+    <div id="modalBackdrop" class="absolute inset-0 bg-black/65 backdrop-blur-sm"></div>
+    <div class="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.09] bg-[#121722] shadow-2xl shadow-black/50">
+      <div class="flex items-start justify-between border-b border-white/[0.06] px-5 py-5">
+        <div class="flex gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl border border-indigo-400/20 bg-indigo-500/10">
+            <i data-lucide="folder-git-2" class="h-4 w-4 text-indigo-400"></i>
+          </div>
+          <div>
+            <p class="font-mono text-[10px] uppercase tracking-[.15em] text-slate-600">Repository Builder</p>
+            <h3 id="repoModalTitle" class="mt-1 text-base font-semibold text-white">Create GitHub Repository</h3>
+          </div>
+        </div>
+        <button id="closeModalButton" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-all duration-200 ease-in-out hover:bg-white/[0.05] hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" aria-label="Close repository builder">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <form id="repositoryForm" class="space-y-5 p-5">
+        <div>
+          <label for="repoName" class="mb-2 block text-xs font-medium text-slate-300">Repository Name</label>
+          <div class="field-control flex items-center rounded-xl border border-white/[0.08] bg-[#0B0F19] transition-all duration-200">
+            <i data-lucide="github" class="ml-3.5 h-4 w-4 text-slate-600"></i>
+            <input id="repoName" type="text" required autocomplete="off" spellcheck="false" placeholder="gas-project-source" class="w-full bg-transparent px-3.5 py-3 font-mono text-xs text-slate-200 outline-none placeholder:font-sans placeholder:text-sm placeholder:text-slate-700" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
+          <div>
+            <p class="text-xs font-medium text-slate-300">Private Repository</p>
+            <p class="mt-1 text-[11px] leading-4 text-slate-600">Restrict visibility to authorized GitHub collaborators.</p>
+          </div>
+          <label class="relative inline-flex cursor-pointer items-center" aria-label="Private Repository">
+            <input id="repoPrivate" type="checkbox" checked class="switch-input peer sr-only" />
+            <span class="switch-track relative h-6 w-11 rounded-full bg-slate-700 transition-all duration-200 ease-in-out">
+              <span class="switch-thumb absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out"></span>
+            </span>
+          </label>
+        </div>
+
+        <div id="repoFormError" class="hidden rounded-xl border border-rose-500/20 bg-rose-500/[0.07] px-4 py-3 text-xs leading-5 text-rose-300" role="alert"></div>
+
+        <div class="flex gap-2 pt-1">
+          <button id="cancelRepoButton" type="button" class="inline-flex flex-1 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-sm font-medium text-slate-400 transition-all duration-200 ease-in-out hover:bg-white/[0.05] hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">Cancel</button>
+          <button id="createRepoButton" type="submit" class="inline-flex flex-[1.25] items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 ease-in-out hover:bg-indigo-400 active:scale-[.99] disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
+            <i data-lucide="plus" class="h-4 w-4"></i>
+            <span>Create Repo</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- INTEGRATION SCHEDULE MODAL -->
+  <div id="scheduleModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle">
+    <div id="scheduleBackdrop" class="absolute inset-0 bg-black/65 backdrop-blur-sm"></div>
+    <div class="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.09] bg-[#121722] shadow-2xl shadow-black/50">
+      <div class="flex items-start justify-between border-b border-white/[0.06] px-5 py-5">
+        <div class="flex gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl border border-indigo-400/20 bg-indigo-500/10">
+            <i data-lucide="calendar-clock" class="h-4 w-4 text-indigo-400"></i>
+          </div>
+          <div>
+            <p class="font-mono text-[10px] uppercase tracking-[.15em] text-slate-600">Time-based Trigger</p>
+            <h3 id="scheduleModalTitle" class="mt-1 text-base font-semibold text-white">Schedule Integration</h3>
+            <p id="scheduleProjectName" class="mt-1 text-[11px] text-slate-600"></p>
+          </div>
+        </div>
+        <button id="closeScheduleButton" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-all duration-200 ease-in-out hover:bg-white/[0.05] hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30" aria-label="Close schedule settings">
+          <i data-lucide="x" class="h-4 w-4"></i>
+        </button>
+      </div>
+
+      <form id="scheduleForm" class="space-y-5 p-5">
+        <div class="flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
+          <div>
+            <p class="text-xs font-medium text-slate-300">Automatic Sync</p>
+            <p class="mt-1 text-[11px] leading-4 text-slate-600">Run this integration automatically using GitScript's shared scheduler.</p>
+          </div>
+          <label class="relative inline-flex cursor-pointer items-center" aria-label="Enable automatic sync">
+            <input id="scheduleEnabled" type="checkbox" class="switch-input peer sr-only" />
+            <span class="switch-track relative h-6 w-11 rounded-full bg-slate-700 transition-all duration-200 ease-in-out">
+              <span class="switch-thumb absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out"></span>
+            </span>
+          </label>
+        </div>
+
+        <div id="scheduleFields" class="space-y-4">
+          <div>
+            <label for="scheduleType" class="mb-2 block text-xs font-medium text-slate-300">Schedule Type</label>
+            <select id="scheduleType" class="w-full rounded-xl border border-white/[0.08] bg-[#0B0F19] px-3.5 py-3 text-sm text-slate-300 outline-none transition-all duration-200 focus:border-indigo-500/70 focus:ring-2 focus:ring-indigo-500/10">
+              <option value="interval">Recurring interval</option>
+              <option value="daily">Daily at a specific hour</option>
+              <option value="weekly">Weekly on a specific day</option>
+            </select>
+          </div>
+
+          <div id="intervalFields">
+            <label for="scheduleInterval" class="mb-2 block text-xs font-medium text-slate-300">Run Every</label>
+            <select id="scheduleInterval" class="w-full rounded-xl border border-white/[0.08] bg-[#0B0F19] px-3.5 py-3 text-sm text-slate-300 outline-none transition-all duration-200 focus:border-indigo-500/70 focus:ring-2 focus:ring-indigo-500/10">
+              <option value="1">1 hour</option>
+              <option value="2">2 hours</option>
+              <option value="4">4 hours</option>
+              <option value="6">6 hours</option>
+              <option value="12">12 hours</option>
+              <option value="24">24 hours</option>
+            </select>
+          </div>
+
+          <div id="dailyFields" class="hidden">
+            <label for="scheduleHour" class="mb-2 block text-xs font-medium text-slate-300">Run Daily At</label>
+            <select id="scheduleHour" class="w-full rounded-xl border border-white/[0.08] bg-[#0B0F19] px-3.5 py-3 text-sm text-slate-300 outline-none transition-all duration-200 focus:border-indigo-500/70 focus:ring-2 focus:ring-indigo-500/10"></select>
+          </div>
+
+          <div id="weeklyFields" class="hidden space-y-4">
+            <div>
+              <label for="scheduleWeekday" class="mb-2 block text-xs font-medium text-slate-300">Day of Week</label>
+              <select id="scheduleWeekday" class="w-full rounded-xl border border-white/[0.08] bg-[#0B0F19] px-3.5 py-3 text-sm text-slate-300 outline-none transition-all duration-200 focus:border-indigo-500/70 focus:ring-2 focus:ring-indigo-500/10">
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </div>
+            <div>
+              <label for="scheduleWeeklyHour" class="mb-2 block text-xs font-medium text-slate-300">Run At</label>
+              <select id="scheduleWeeklyHour" class="w-full rounded-xl border border-white/[0.08] bg-[#0B0F19] px-3.5 py-3 text-sm text-slate-300 outline-none transition-all duration-200 focus:border-indigo-500/70 focus:ring-2 focus:ring-indigo-500/10"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-white/[0.05] bg-black/15 px-4 py-3 text-[11px] leading-5 text-slate-600">
+          <div class="flex items-start gap-2">
+            <i data-lucide="info" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-indigo-400/70"></i>
+            <span>GitScript uses one shared 15-minute Apps Script time trigger for all scheduled integrations. Hourly, daily, and weekly runs occur within the dispatcher window rather than at an exact second.</span>
+          </div>
+          <div class="mt-2 font-mono text-[10px] text-slate-700">Timezone: <span id="scheduleTimezone">—</span></div>
+        </div>
+
+        <div id="scheduleFormError" class="hidden rounded-xl border border-rose-500/20 bg-rose-500/[0.07] px-4 py-3 text-xs leading-5 text-rose-300" role="alert"></div>
+
+        <div class="flex gap-2 pt-1">
+          <button id="cancelScheduleButton" type="button" class="inline-flex flex-1 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-sm font-medium text-slate-400 transition-all duration-200 ease-in-out hover:bg-white/[0.05] hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">Cancel</button>
+          <button id="saveScheduleButton" type="submit" class="inline-flex flex-[1.25] items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 ease-in-out hover:bg-indigo-400 active:scale-[.99] disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40">
+            <i data-lucide="calendar-check" class="h-4 w-4"></i>
+            <span>Save Schedule</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div id="toastRegion" class="pointer-events-none fixed inset-x-4 bottom-4 z-[70] flex flex-col items-end gap-2 sm:left-auto sm:w-[380px]" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const state = {
+        repositories: [],
+        configurations: [],
+        schedulerInfo: { timezone: 'America/Chicago', dispatcherMinutes: 15, allowedIntervalHours: [1, 2, 4, 6, 12, 24], weekdays: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], triggerActive: false },
+        syncing: new Set(),
+        busy: new Set(),
+        expanded: new Set(),
+        scheduleTargetId: null
+      };
+
+      const el = {
+        mappingForm: document.getElementById('mappingForm'),
+        nickname: document.getElementById('nickname'),
+        gasProjectLink: document.getElementById('gasProjectLink'),
+        repository: document.getElementById('repository'),
+        branch: document.getElementById('branch'),
+        initializeButton: document.getElementById('initializeButton'),
+        formError: document.getElementById('formError'),
+        streamsContainer: document.getElementById('streamsContainer'),
+        streamCount: document.getElementById('streamCount'),
+        refreshStreamsButton: document.getElementById('refreshStreamsButton'),
+        profileEmail: document.getElementById('profileEmail'),
+        repositoryModal: document.getElementById('repositoryModal'),
+        modalBackdrop: document.getElementById('modalBackdrop'),
+        newRepoButton: document.getElementById('newRepoButton'),
+        closeModalButton: document.getElementById('closeModalButton'),
+        cancelRepoButton: document.getElementById('cancelRepoButton'),
+        repositoryForm: document.getElementById('repositoryForm'),
+        repoName: document.getElementById('repoName'),
+        repoPrivate: document.getElementById('repoPrivate'),
+        createRepoButton: document.getElementById('createRepoButton'),
+        repoFormError: document.getElementById('repoFormError'),
+        scheduleModal: document.getElementById('scheduleModal'),
+        scheduleBackdrop: document.getElementById('scheduleBackdrop'),
+        closeScheduleButton: document.getElementById('closeScheduleButton'),
+        cancelScheduleButton: document.getElementById('cancelScheduleButton'),
+        scheduleForm: document.getElementById('scheduleForm'),
+        scheduleProjectName: document.getElementById('scheduleProjectName'),
+        scheduleEnabled: document.getElementById('scheduleEnabled'),
+        scheduleFields: document.getElementById('scheduleFields'),
+        scheduleType: document.getElementById('scheduleType'),
+        intervalFields: document.getElementById('intervalFields'),
+        dailyFields: document.getElementById('dailyFields'),
+        weeklyFields: document.getElementById('weeklyFields'),
+        scheduleInterval: document.getElementById('scheduleInterval'),
+        scheduleHour: document.getElementById('scheduleHour'),
+        scheduleWeekday: document.getElementById('scheduleWeekday'),
+        scheduleWeeklyHour: document.getElementById('scheduleWeeklyHour'),
+        scheduleTimezone: document.getElementById('scheduleTimezone'),
+        scheduleFormError: document.getElementById('scheduleFormError'),
+        saveScheduleButton: document.getElementById('saveScheduleButton'),
+        toastRegion: document.getElementById('toastRegion')
+      };
+
+      const LOCAL_PREVIEW = !(window.google && google.script && google.script.run);
+
+      const demo = {
+        repositories: [
+          { fullName: 'markallan/client-portal', name: 'client-portal', private: true },
+          { fullName: 'markallan/ops-dashboard', name: 'ops-dashboard', private: true },
+          { fullName: 'markallan/public-site', name: 'public-site', private: false }
+        ],
+        configurations: [
+          {
+            id: 'demo-1', nickname: 'Client Portal Production',
+            scriptId: '1AbCdEfGhIjKlMnOpQrStUvWxYz1234567890', repository: 'markallan/client-portal', branch: 'main',
+            lastPush: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), status: 'ready', syncStatus: 'ready', lifecycle: 'active',
+            schedule: { enabled: true, type: 'interval', intervalHours: 4, hour: null, weekday: null, timezone: 'America/Chicago', nextRun: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), lastRun: null },
+            logs: ['Mapping active', 'Schedule: Every 4 hours', 'Last push completed via Cloud Engine']
+          },
+          {
+            id: 'demo-2', nickname: 'Internal Ops Console',
+            scriptId: '1ZyXwVuTsRqPoNmLkJiHgFeDcBa0987654321', repository: 'markallan/ops-dashboard', branch: 'main',
+            lastPush: null, status: 'ready', syncStatus: 'ready', lifecycle: 'inactive',
+            schedule: { enabled: false, type: 'manual', intervalHours: null, hour: null, weekday: null, timezone: 'America/Chicago', nextRun: null, lastRun: null },
+            logs: ['Integration inactive · sync actions paused', 'Schedule: manual only']
+          },
+          {
+            id: 'demo-3', nickname: 'Archived Prototype',
+            scriptId: '1QwertyUiopAsdfGhjkLzxcVbnm1234567890', repository: 'markallan/public-site', branch: 'archive',
+            lastPush: null, status: 'ready', syncStatus: 'ready', lifecycle: 'archived',
+            schedule: { enabled: false, type: 'manual', intervalHours: null, hour: null, weekday: null, timezone: 'America/Chicago', nextRun: null, lastRun: null },
+            logs: ['Integration archived']
+          }
+        ]
+      };
+
+      function callServer(method, ...args) {
+        if (LOCAL_PREVIEW) return previewServer(method, args);
+        return new Promise((resolve, reject) => {
+          try {
+            const runner = google.script.run
+              .withSuccessHandler(resolve)
+              .withFailureHandler(err => reject(normalizeError(err)));
+            runner[method](...args);
+          } catch (err) {
+            reject(normalizeError(err));
+          }
+        });
+      }
+
+      function previewServer(method, args) {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            try {
+              const id = String(args[0] || '');
+              const item = demo.configurations.find(x => String(x.id) === id);
+              switch (method) {
+                case 'getGitHubRepositories': resolve(demo.repositories); break;
+                case 'getSyncConfigurations': resolve(demo.configurations); break;
+                case 'getConnectedProfileEmail': resolve('preview@example.com'); break;
+                case 'getSchedulerInfo': resolve({ timezone: 'America/Chicago', dispatcherMinutes: 15, allowedIntervalHours: [1,2,4,6,12,24], weekdays: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], triggerActive: true }); break;
+                case 'saveSyncConfiguration': {
+                  const payload = args[0];
+                  const created = {
+                    ...payload, id: 'demo-' + Date.now(), lastPush: null, status: 'ready', syncStatus: 'ready', lifecycle: 'active',
+                    schedule: { enabled: false, type: 'manual', intervalHours: null, hour: null, weekday: null, timezone: 'America/Chicago', nextRun: null, lastRun: null },
+                    logs: ['Mapping initialized in preview mode']
+                  };
+                  demo.configurations.unshift(created);
+                  resolve(created);
+                  break;
+                }
+                case 'createGitHubRepository': {
+                  const payload = args[0];
+                  const repo = { fullName: 'preview/' + payload.name, name: payload.name, private: !!payload.private };
+                  demo.repositories.unshift(repo);
+                  resolve(repo);
+                  break;
+                }
+                case 'syncNow': {
+                  if (!item) throw new Error('Configuration not found.');
+                  if (item.lifecycle !== 'active') throw new Error('Reactivate this integration before syncing.');
+                  item.lastPush = new Date().toISOString();
+                  item.logs = ['Fetching Apps Script source…', 'Building Git tree…', 'Commit created successfully', 'Branch updated'];
+                  resolve({ ok: true, lastPush: item.lastPush, logs: item.logs, commitUrl: '#' });
+                  break;
+                }
+                case 'deactivateIntegration': {
+                  if (!item) throw new Error('Configuration not found.'); item.lifecycle = 'inactive'; resolve(item); break;
+                }
+                case 'reactivateIntegration':
+                case 'restoreIntegration': {
+                  if (!item) throw new Error('Configuration not found.'); item.lifecycle = 'active'; resolve(item); break;
+                }
+                case 'archiveIntegration': {
+                  if (!item) throw new Error('Configuration not found.'); item.lifecycle = 'archived'; resolve(item); break;
+                }
+                case 'setIntegrationSchedule': {
+                  if (!item) throw new Error('Configuration not found.');
+                  const payload = args[1] || {};
+                  item.schedule = payload.enabled ? {
+                    enabled: true,
+                    type: payload.type,
+                    intervalHours: payload.type === 'interval' ? Number(payload.intervalHours) : null,
+                    hour: (payload.type === 'daily' || payload.type === 'weekly') ? Number(payload.hour) : null,
+                    weekday: payload.type === 'weekly' ? Number(payload.weekday) : null,
+                    timezone: 'America/Chicago',
+                    nextRun: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                    lastRun: item.schedule?.lastRun || null
+                  } : { enabled: false, type: 'manual', intervalHours: null, hour: null, weekday: null, timezone: 'America/Chicago', nextRun: null, lastRun: item.schedule?.lastRun || null };
+                  resolve(item); break;
+                }
+                default: reject(new Error('Preview method not implemented: ' + method));
+              }
+            } catch (err) { reject(err); }
+          }, 350 + Math.random() * 350);
+        });
+      }
+
+      function normalizeError(err) {
+        if (err instanceof Error) return err;
+        if (err && err.message) return new Error(err.message);
+        return new Error(String(err || 'Unknown server error'));
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? '')
+          .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+      }
+
+      function inspectScriptId(value) {
+        const text = String(value || '').trim();
+        if (!text) return { id: '', error: 'Apps Script editor URL or Script ID is required.' };
+        if (/script\.google\.com\/macros\/s\//i.test(text) || /^AKfy/i.test(text)) {
+          return { id: '', error: 'Web App deployment detected. Open the target project → Project Settings → Script ID → Copy.' };
+        }
+        const home = text.match(/script\.google\.com\/(?:u\/\d+\/)?home\/projects\/([A-Za-z0-9_-]{20,})/i);
+        if (home) return { id: home[1], error: '' };
+        const editor = text.match(/script\.google\.com\/d\/([A-Za-z0-9_-]{20,})/i);
+        if (editor) return { id: editor[1], error: '' };
+        if (/^[A-Za-z0-9_-]{20,}$/.test(text)) return { id: text, error: '' };
+        return { id: '', error: 'Paste the Apps Script editor URL or Project Settings → Script ID.' };
+      }
+
+      function extractScriptId(value) { return inspectScriptId(value).id; }
+
+      function truncateMiddle(value, start = 10, end = 8) {
+        const text = String(value || '');
+        if (text.length <= start + end + 3) return text;
+        return text.slice(0, start) + '…' + text.slice(-end);
+      }
+
+      function formatRelativeTime(value) {
+        if (!value) return 'Never';
+        const time = new Date(value).getTime();
+        if (!Number.isFinite(time)) return String(value);
+        const diff = Date.now() - time;
+        const abs = Math.abs(diff);
+        const units = [['day',86400000], ['hour',3600000], ['minute',60000]];
+        for (const [unit, ms] of units) {
+          if (abs >= ms) {
+            const n = Math.round(diff / ms);
+            return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(-n, unit);
+          }
+        }
+        return 'just now';
+      }
+
+      function formatHour(hour) {
+        const h = Number(hour);
+        if (!Number.isFinite(h)) return '—';
+        const suffix = h >= 12 ? 'PM' : 'AM';
+        const display = h % 12 || 12;
+        return `${display}:00 ${suffix}`;
+      }
+
+      function formatWeekday(weekday) {
+        const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const index = Number(weekday);
+        return Number.isInteger(index) && index >= 0 && index <= 6 ? names[index] : 'Selected day';
+      }
+
+      function formatSchedule(schedule) {
+        if (!schedule?.enabled) return 'Manual only';
+        if (schedule.type === 'interval') return `Every ${schedule.intervalHours} hour${Number(schedule.intervalHours) === 1 ? '' : 's'}`;
+        if (schedule.type === 'daily') return `Daily · ${formatHour(schedule.hour)}`;
+        if (schedule.type === 'weekly') return `${formatWeekday(schedule.weekday)} · ${formatHour(schedule.hour)}`;
+        return 'Manual only';
+      }
+
+      function setButtonLoading(button, loading, label) {
+        if (!button) return;
+        if (!button.dataset.originalHtml) button.dataset.originalHtml = button.innerHTML;
+        button.disabled = loading;
+        button.innerHTML = loading
+          ? `<i data-lucide="loader-circle" class="h-4 w-4 animate-spin"></i><span>${escapeHtml(label || 'Working…')}</span>`
+          : button.dataset.originalHtml;
+        refreshIcons();
+      }
+
+      function refreshIcons() {
+        if (window.lucide) lucide.createIcons({ attrs: { 'stroke-width': 1.8 } });
+      }
+
+      function showToast(message, type = 'success') {
+        const tone = type === 'error'
+          ? 'border-rose-500/20 bg-[#21131A] text-rose-200'
+          : 'border-emerald-500/20 bg-[#102019] text-emerald-100';
+        const icon = type === 'error' ? 'circle-alert' : 'circle-check';
+        const toast = document.createElement('div');
+        toast.className = `pointer-events-auto flex w-full items-start gap-3 rounded-xl border px-4 py-3 shadow-2xl shadow-black/30 backdrop-blur-xl ${tone}`;
+        toast.innerHTML = `<i data-lucide="${icon}" class="mt-0.5 h-4 w-4 shrink-0"></i><p class="flex-1 text-xs leading-5">${escapeHtml(message)}</p><button type="button" class="toast-close -mr-1 inline-flex h-6 w-6 items-center justify-center rounded-md opacity-50 transition hover:bg-white/5 hover:opacity-100" aria-label="Dismiss"><i data-lucide="x" class="h-3.5 w-3.5"></i></button>`;
+        el.toastRegion.appendChild(toast);
+        refreshIcons();
+        const remove = () => toast.remove();
+        toast.querySelector('.toast-close').addEventListener('click', remove);
+        setTimeout(remove, 4500);
+      }
+
+      function showFormError(target, message) {
+        target.textContent = message || '';
+        target.classList.toggle('hidden', !message);
+      }
+
+      function normalizeRepo(repo) {
+        if (typeof repo === 'string') return { fullName: repo, name: repo.split('/').pop(), private: false };
+        return {
+          fullName: repo.fullName || repo.full_name || repo.repository || repo.name || '',
+          name: repo.name || (repo.fullName || repo.full_name || '').split('/').pop(),
+          private: Boolean(repo.private)
+        };
+      }
+
+      function normalizeConfig(config, index) {
+        const schedule = config.schedule || {};
+        return {
+          id: config.id ?? config.configurationId ?? config.rowId ?? String(index + 1),
+          nickname: config.nickname ?? config.projectNickname ?? config.name ?? 'Untitled Project',
+          scriptId: config.scriptId ?? config.gasScriptId ?? config.gasId ?? '',
+          repository: config.repository ?? config.repo ?? config.repoFullName ?? '',
+          branch: config.branch ?? 'main',
+          lastPush: config.lastPush ?? config.lastPushAt ?? config.updatedAt ?? null,
+          status: config.syncStatus ?? config.status ?? 'ready',
+          lifecycle: config.lifecycle ?? 'active',
+          lastError: config.lastError ?? '',
+          archivedAt: config.archivedAt ?? null,
+          schedule: {
+            enabled: Boolean(schedule.enabled),
+            type: schedule.type || 'manual',
+            intervalHours: schedule.intervalHours ?? null,
+            hour: schedule.hour ?? null,
+            weekday: schedule.weekday ?? null,
+            timezone: schedule.timezone || state.schedulerInfo.timezone || '',
+            nextRun: schedule.nextRun ?? null,
+            lastRun: schedule.lastRun ?? null
+          },
+          logs: Array.isArray(config.logs) ? config.logs : []
+        };
+      }
+
+      async function loadRepositories(selectValue = '') {
+        el.repository.disabled = true;
+        el.repository.innerHTML = '<option value="">Loading repositories…</option>';
+        try {
+          const repos = await callServer('getGitHubRepositories');
+          state.repositories = (repos || []).map(normalizeRepo).filter(x => x.fullName);
+          const options = ['<option value="">Select a repository</option>']
+            .concat(state.repositories.map(repo => `<option value="${escapeHtml(repo.fullName)}">${escapeHtml(repo.fullName)}${repo.private ? ' · private' : ''}</option>`));
+          el.repository.innerHTML = options.join('');
+          if (selectValue && state.repositories.some(x => x.fullName === selectValue)) el.repository.value = selectValue;
+        } catch (err) {
+          el.repository.innerHTML = '<option value="">Unable to load repositories</option>';
+          showToast(err.message || 'Unable to load GitHub repositories.', 'error');
+        } finally {
+          el.repository.disabled = false;
+        }
+      }
+
+      async function loadConfigurations({ quiet = false } = {}) {
+        if (!quiet) renderStreamsLoading();
+        el.refreshStreamsButton.querySelector('svg, i')?.classList.add('animate-spin');
+        try {
+          const configs = await callServer('getSyncConfigurations');
+          state.configurations = (configs || []).map(normalizeConfig);
+          renderStreams();
+        } catch (err) {
+          state.configurations = [];
+          renderStreamsError(err.message || 'Unable to load integration streams.');
+        } finally {
+          el.refreshStreamsButton.querySelector('svg, i')?.classList.remove('animate-spin');
+        }
+      }
+
+      async function loadProfile() {
+        try {
+          const email = await callServer('getConnectedProfileEmail');
+          el.profileEmail.textContent = email || 'Google account connected';
+          el.profileEmail.title = email || '';
+        } catch (_) { el.profileEmail.textContent = 'Google account connected'; }
+      }
+
+      async function loadSchedulerInfo() {
+        try {
+          state.schedulerInfo = { ...state.schedulerInfo, ...(await callServer('getSchedulerInfo') || {}) };
+        } catch (_) {}
+        el.scheduleTimezone.textContent = state.schedulerInfo.timezone || 'Apps Script project timezone';
+      }
+
+      function renderStreamsLoading() {
+        el.streamCount.textContent = '…';
+        el.streamsContainer.innerHTML = `<div class="rounded-2xl border border-white/[0.07] bg-panel/85 p-5"><div class="animate-pulse space-y-4"><div class="flex justify-between gap-5"><div class="space-y-2"><div class="h-4 w-40 rounded bg-slate-800"></div><div class="h-3 w-64 max-w-full rounded bg-slate-800/70"></div></div><div class="h-9 w-24 rounded-lg bg-slate-800"></div></div><div class="h-px bg-white/[0.04]"></div><div class="h-3 w-52 rounded bg-slate-800/60"></div></div></div>`;
+      }
+
+      function renderStreamsError(message) {
+        el.streamCount.textContent = '0';
+        el.streamsContainer.innerHTML = `<div class="rounded-2xl border border-rose-500/15 bg-rose-500/[0.04] p-6 text-center"><div class="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10"><i data-lucide="cloud-off" class="h-5 w-5 text-rose-400"></i></div><h4 class="mt-3 text-sm font-medium text-slate-200">Streams unavailable</h4><p class="mx-auto mt-1 max-w-sm text-xs leading-5 text-slate-600">${escapeHtml(message)}</p><button type="button" data-action="retry-load" class="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-medium text-slate-400 transition-all duration-200 hover:bg-white/[0.06] hover:text-slate-200"><i data-lucide="refresh-cw" class="h-3.5 w-3.5"></i>Retry</button></div>`;
+        refreshIcons();
+      }
+
+      function renderStreams() {
+        const activeCount = state.configurations.filter(x => x.lifecycle === 'active').length;
+        el.streamCount.textContent = `${activeCount}/${state.configurations.length}`;
+        if (!state.configurations.length) {
+          el.streamsContainer.innerHTML = `<div class="rounded-2xl border border-dashed border-white/[0.09] bg-white/[0.015] px-6 py-12 text-center"><div class="mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03]"><i data-lucide="waypoints" class="h-5 w-5 text-slate-600"></i></div><h4 class="mt-4 text-sm font-medium text-slate-300">No integration streams yet</h4><p class="mx-auto mt-1 max-w-sm text-xs leading-5 text-slate-600">Create your first Apps Script → GitHub mapping with the setup wizard.</p></div>`;
+          refreshIcons(); return;
+        }
+
+        const groups = [
+          ['active', 'Active', 'Live routes that can sync now.'],
+          ['inactive', 'Inactive', 'Paused routes that retain their mapping and schedule.'],
+          ['archived', 'Archived', 'Preserved routes removed from active operations.']
+        ];
+
+        el.streamsContainer.innerHTML = groups.map(([key, label, helper]) => {
+          const configs = state.configurations.filter(x => x.lifecycle === key);
+          if (!configs.length) return '';
+          return `<div class="space-y-3"><div class="flex items-center justify-between px-1 pt-1"><div><p class="font-mono text-[10px] uppercase tracking-[.14em] text-slate-600">${label}</p><p class="mt-1 text-[10px] text-slate-700">${helper}</p></div><span class="rounded-md border border-white/[0.05] bg-white/[0.02] px-2 py-0.5 font-mono text-[9px] text-slate-600">${configs.length}</span></div>${configs.map(streamCardTemplate).join('')}</div>`;
+        }).join('<div class="h-2"></div>');
+        refreshIcons();
+      }
+
+      function lifecycleMeta(config) {
+        if (config.lifecycle === 'inactive') return { dot: 'bg-amber-400', glow: 'shadow-[0_0_12px_rgba(245,158,11,.4)]', badge: 'border-amber-500/15 bg-amber-500/[0.06] text-amber-400/80', label: 'inactive', opacity: '' };
+        if (config.lifecycle === 'archived') return { dot: 'bg-slate-600', glow: '', badge: 'border-slate-600/20 bg-slate-700/[0.08] text-slate-500', label: 'archived', opacity: 'opacity-70' };
+        return { dot: 'bg-emerald-400', glow: 'shadow-[0_0_12px_rgba(16,185,129,.5)]', badge: 'border-emerald-500/15 bg-emerald-500/[0.06] text-emerald-400/70', label: 'active', opacity: '' };
+      }
+
+      function streamCardTemplate(config) {
+        const rawId = String(config.id);
+        const id = escapeHtml(rawId);
+        const expanded = state.expanded.has(rawId);
+        const syncing = state.syncing.has(rawId);
+        const busy = state.busy.has(rawId);
+        const active = config.lifecycle === 'active';
+        const meta = lifecycleMeta(config);
+        const lastPush = config.lastPush ? `Last push ${formatRelativeTime(config.lastPush)}` : 'No pushes yet';
+        const scheduleText = formatSchedule(config.schedule);
+        const nextRun = config.schedule?.enabled && config.schedule?.nextRun ? ` · next ${formatRelativeTime(config.schedule.nextRun)}` : '';
+        const errorBadge = config.status === 'error' ? '<span class="rounded-md border border-rose-500/15 bg-rose-500/[0.06] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-rose-400/80">sync error</span>' : '';
+        const logs = (config.logs?.length ? config.logs : ['Stream healthy', lastPush]).slice(-6).map(line => `<div class="flex gap-2"><span class="select-none text-emerald-500/60">›</span><span>${escapeHtml(line)}</span></div>`).join('');
+
+        let lifecycleButtons = '';
+        if (config.lifecycle === 'active') {
+          lifecycleButtons = `<button type="button" data-action="deactivate" data-id="${id}" ${busy ? 'disabled' : ''} class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/10 bg-amber-500/[0.035] px-2.5 py-2 text-[10px] font-medium text-amber-400/70 transition-all duration-200 hover:bg-amber-500/[0.08] hover:text-amber-300 disabled:opacity-40"><i data-lucide="pause" class="h-3 w-3"></i>Deactivate</button><button type="button" data-action="archive" data-id="${id}" ${busy ? 'disabled' : ''} class="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2 text-[10px] font-medium text-slate-600 transition-all duration-200 hover:bg-white/[0.05] hover:text-slate-400 disabled:opacity-40"><i data-lucide="archive" class="h-3 w-3"></i>Archive</button>`;
+        } else if (config.lifecycle === 'inactive') {
+          lifecycleButtons = `<button type="button" data-action="reactivate" data-id="${id}" ${busy ? 'disabled' : ''} class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/10 bg-emerald-500/[0.035] px-2.5 py-2 text-[10px] font-medium text-emerald-400/70 transition-all duration-200 hover:bg-emerald-500/[0.08] hover:text-emerald-300 disabled:opacity-40"><i data-lucide="play" class="h-3 w-3"></i>Reactivate</button><button type="button" data-action="archive" data-id="${id}" ${busy ? 'disabled' : ''} class="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2 text-[10px] font-medium text-slate-600 transition-all duration-200 hover:bg-white/[0.05] hover:text-slate-400 disabled:opacity-40"><i data-lucide="archive" class="h-3 w-3"></i>Archive</button>`;
+        } else {
+          lifecycleButtons = `<button type="button" data-action="restore" data-id="${id}" ${busy ? 'disabled' : ''} class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/10 bg-indigo-500/[0.035] px-2.5 py-2 text-[10px] font-medium text-indigo-400/70 transition-all duration-200 hover:bg-indigo-500/[0.08] hover:text-indigo-300 disabled:opacity-40"><i data-lucide="archive-restore" class="h-3 w-3"></i>Restore</button>`;
+        }
+
+        return `<article class="group overflow-hidden rounded-2xl border border-white/[0.07] bg-panel/85 shadow-[0_10px_30px_rgba(0,0,0,.12)] transition-all duration-200 ease-in-out hover:border-white/[0.11] ${meta.opacity}" data-stream-id="${id}">
+          <div class="p-4 sm:p-5">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div class="min-w-0 flex-1">
+                <div class="flex min-w-0 flex-wrap items-center gap-2.5"><span class="h-2 w-2 shrink-0 rounded-full ${meta.dot} ${meta.glow}"></span><h4 class="truncate text-sm font-semibold text-slate-100">${escapeHtml(config.nickname)}</h4><span class="rounded-md border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${meta.badge}">${meta.label}</span>${errorBadge}</div>
+                <div class="mt-3 flex min-w-0 flex-wrap items-center gap-2 font-mono text-[10px] sm:text-[11px]"><span class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-white/[0.06] bg-black/15 px-2 py-1.5 text-slate-500" title="${escapeHtml(config.scriptId)}"><i data-lucide="braces" class="h-3 w-3 shrink-0 text-amber-400/70"></i><span class="truncate">${escapeHtml(truncateMiddle(config.scriptId, 10, 7))}</span></span><i data-lucide="arrow-right" class="h-3.5 w-3.5 shrink-0 text-slate-700"></i><span class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-white/[0.06] bg-black/15 px-2 py-1.5 text-slate-400" title="${escapeHtml(config.repository + '/' + config.branch)}"><i data-lucide="github" class="h-3 w-3 shrink-0"></i><span class="truncate">${escapeHtml(config.repository)}</span><span class="text-slate-700">/</span><span class="text-indigo-400/80">${escapeHtml(config.branch)}</span></span></div>
+              </div>
+              <div class="flex shrink-0 items-center gap-2"><button type="button" data-action="toggle-history" data-id="${id}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-slate-600 transition-all duration-200 hover:bg-white/[0.05] hover:text-slate-300" aria-label="Toggle sync history"><i data-lucide="${expanded ? 'chevron-up' : 'terminal-square'}" class="h-4 w-4"></i></button>${active ? `<button type="button" data-action="sync-now" data-id="${id}" ${syncing || busy ? 'disabled' : ''} class="inline-flex min-w-[102px] items-center justify-center gap-2 rounded-lg ${syncing ? 'bg-slate-700 text-slate-400' : 'bg-indigo-500/95 text-white hover:bg-indigo-400'} px-3.5 py-2.5 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:opacity-60"><i data-lucide="refresh-cw" class="h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}"></i><span>${syncing ? 'Syncing…' : 'Sync Now'}</span></button>` : ''}</div>
+            </div>
+            <div class="mt-4 grid gap-2 border-t border-white/[0.05] pt-3 sm:grid-cols-[1fr_auto] sm:items-center"><div class="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-slate-600"><span class="inline-flex items-center gap-2"><i data-lucide="clock-3" class="h-3.5 w-3.5"></i>${escapeHtml(lastPush)}</span><span class="inline-flex items-center gap-2"><i data-lucide="calendar-clock" class="h-3.5 w-3.5"></i>${escapeHtml(scheduleText + nextRun)}</span></div><div class="flex flex-wrap justify-start gap-1.5 sm:justify-end">${config.lifecycle !== 'archived' ? `<button type="button" data-action="schedule" data-id="${id}" class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/10 bg-indigo-500/[0.035] px-2.5 py-2 text-[10px] font-medium text-indigo-400/70 transition-all duration-200 hover:bg-indigo-500/[0.08] hover:text-indigo-300"><i data-lucide="calendar-clock" class="h-3 w-3"></i>Schedule</button>` : ''}${lifecycleButtons}</div></div>
+          </div>
+          <div class="${expanded ? 'block' : 'hidden'} border-t border-white/[0.06] bg-[#0A0E16] px-4 py-4 sm:px-5"><div class="mb-2 flex items-center justify-between gap-3"><div class="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.13em] text-slate-600"><i data-lucide="terminal" class="h-3.5 w-3.5"></i>Stream Console</div><span class="font-mono text-[10px] text-slate-700">${escapeHtml(config.branch)}</span></div><div class="space-y-1.5 overflow-x-auto rounded-lg border border-white/[0.04] bg-black/20 p-3 font-mono text-[10px] leading-5 text-slate-500">${logs}</div></div>
+        </article>`;
+      }
+
+      async function handleMappingSubmit(event) {
+        event.preventDefault(); showFormError(el.formError, '');
+        const inspected = inspectScriptId(el.gasProjectLink.value);
+        if (inspected.error) { showFormError(el.formError, inspected.error); return; }
+        const payload = { nickname: el.nickname.value.trim(), scriptId: inspected.id, gasProjectLink: el.gasProjectLink.value.trim(), repository: el.repository.value, branch: el.branch.value.trim() || 'main' };
+        if (!payload.nickname || !payload.repository || !payload.branch) { showFormError(el.formError, 'Complete all required fields before initializing the mapping.'); return; }
+        setButtonLoading(el.initializeButton, true, 'Validating & mapping…');
+        try {
+          await callServer('saveSyncConfiguration', payload);
+          showToast(`Integration map created for ${payload.nickname}.`);
+          el.mappingForm.reset(); el.branch.value = 'main'; await loadConfigurations({ quiet: true });
+        } catch (err) { showFormError(el.formError, err.message || 'Unable to save this integration mapping.'); }
+        finally { setButtonLoading(el.initializeButton, false); }
+      }
+
+      async function runLifecycleAction(id, method, successMessage) {
+        if (state.busy.has(id)) return;
+        state.busy.add(id); renderStreams();
+        try { await callServer(method, id); await loadConfigurations({ quiet: true }); showToast(successMessage); }
+        catch (err) { showToast(err.message || 'Unable to update integration.', 'error'); }
+        finally { state.busy.delete(id); renderStreams(); }
+      }
+
+      async function handleStreamAction(event) {
+        const button = event.target.closest('[data-action]'); if (!button) return;
+        const action = button.dataset.action; const id = String(button.dataset.id || '');
+        if (action === 'retry-load') return loadConfigurations();
+        if (action === 'toggle-history') { state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id); renderStreams(); return; }
+        if (action === 'schedule') return openScheduleModal(id);
+        if (action === 'deactivate') return runLifecycleAction(id, 'deactivateIntegration', 'Integration deactivated. Scheduled and manual syncs are paused.');
+        if (action === 'reactivate') return runLifecycleAction(id, 'reactivateIntegration', 'Integration reactivated.');
+        if (action === 'archive') return runLifecycleAction(id, 'archiveIntegration', 'Integration archived. You can restore it at any time.');
+        if (action === 'restore') return runLifecycleAction(id, 'restoreIntegration', 'Integration restored and reactivated.');
+        if (action === 'sync-now') {
+          if (state.syncing.has(id)) return;
+          state.syncing.add(id); renderStreams();
+          try {
+            const result = await callServer('syncNow', id);
+            const config = state.configurations.find(x => String(x.id) === id);
+            if (config) { config.lastPush = result?.lastPush || new Date().toISOString(); config.status = 'ready'; config.logs = Array.isArray(result?.logs) ? result.logs : ['Sync completed successfully']; state.expanded.add(id); }
+            showToast(`${config?.nickname || 'Project'} synced to GitHub.`);
+          } catch (err) {
+            const config = state.configurations.find(x => String(x.id) === id);
+            if (config) { config.status = 'error'; config.logs = ['Sync failed', err.message || 'Unknown error']; }
+            state.expanded.add(id); showToast(err.message || 'Sync failed.', 'error');
+          } finally { state.syncing.delete(id); renderStreams(); }
+        }
+      }
+
+      function openRepositoryModal() {
+        showFormError(el.repoFormError, ''); el.repositoryModal.classList.remove('hidden'); el.repositoryModal.classList.add('flex'); document.body.classList.add('overflow-hidden'); setTimeout(() => el.repoName.focus(), 40);
+      }
+      function closeRepositoryModal() {
+        el.repositoryModal.classList.add('hidden'); el.repositoryModal.classList.remove('flex'); document.body.classList.remove('overflow-hidden'); el.repositoryForm.reset(); el.repoPrivate.checked = true; showFormError(el.repoFormError, '');
+      }
+      async function handleRepositorySubmit(event) {
+        event.preventDefault(); showFormError(el.repoFormError, ''); const name = el.repoName.value.trim();
+        if (!/^[A-Za-z0-9._-]+$/.test(name)) { showFormError(el.repoFormError, 'Use letters, numbers, hyphens, underscores, or periods only.'); return; }
+        setButtonLoading(el.createRepoButton, true, 'Creating…');
+        try { const created = normalizeRepo(await callServer('createGitHubRepository', { name, private: el.repoPrivate.checked })); await loadRepositories(created.fullName); closeRepositoryModal(); showToast(`Repository ${created.fullName || name} created.`); }
+        catch (err) { showFormError(el.repoFormError, err.message || 'Unable to create the repository.'); }
+        finally { setButtonLoading(el.createRepoButton, false); }
+      }
+
+      function populateHourOptions() {
+        const options = Array.from({ length: 24 }, (_, h) => `<option value="${h}">${formatHour(h)}</option>`).join('');
+        el.scheduleHour.innerHTML = options;
+        el.scheduleWeeklyHour.innerHTML = options;
+      }
+      function refreshScheduleFields() {
+        const enabled = el.scheduleEnabled.checked;
+        el.scheduleFields.classList.toggle('opacity-40', !enabled);
+        el.scheduleFields.classList.toggle('pointer-events-none', !enabled);
+        el.intervalFields.classList.toggle('hidden', el.scheduleType.value !== 'interval');
+        el.dailyFields.classList.toggle('hidden', el.scheduleType.value !== 'daily');
+        el.weeklyFields.classList.toggle('hidden', el.scheduleType.value !== 'weekly');
+      }
+      function openScheduleModal(id) {
+        const config = state.configurations.find(x => String(x.id) === String(id));
+        if (!config || config.lifecycle === 'archived') return;
+        state.scheduleTargetId = String(id); showFormError(el.scheduleFormError, '');
+        el.scheduleProjectName.textContent = config.nickname;
+        el.scheduleEnabled.checked = Boolean(config.schedule?.enabled);
+        const existingType = ['interval', 'daily', 'weekly'].includes(config.schedule?.type) ? config.schedule.type : 'interval';
+        el.scheduleType.value = existingType;
+        el.scheduleInterval.value = String(config.schedule?.intervalHours || 4);
+        const selectedHour = Number.isFinite(Number(config.schedule?.hour)) ? Number(config.schedule.hour) : 8;
+        el.scheduleHour.value = String(selectedHour);
+        el.scheduleWeeklyHour.value = String(selectedHour);
+        el.scheduleWeekday.value = String(Number.isInteger(Number(config.schedule?.weekday)) ? Number(config.schedule.weekday) : 1);
+        el.scheduleTimezone.textContent = config.schedule?.timezone || state.schedulerInfo.timezone || 'Apps Script project timezone';
+        refreshScheduleFields(); el.scheduleModal.classList.remove('hidden'); el.scheduleModal.classList.add('flex'); document.body.classList.add('overflow-hidden'); refreshIcons();
+      }
+      function closeScheduleModal() {
+        state.scheduleTargetId = null; el.scheduleModal.classList.add('hidden'); el.scheduleModal.classList.remove('flex'); document.body.classList.remove('overflow-hidden'); showFormError(el.scheduleFormError, '');
+      }
+      async function handleScheduleSubmit(event) {
+        event.preventDefault(); const id = state.scheduleTargetId; if (!id) return;
+        const payload = { enabled: el.scheduleEnabled.checked };
+        if (payload.enabled) {
+          payload.type = el.scheduleType.value;
+          if (payload.type === 'interval') payload.intervalHours = Number(el.scheduleInterval.value);
+          if (payload.type === 'daily') payload.hour = Number(el.scheduleHour.value);
+          if (payload.type === 'weekly') {
+            payload.weekday = Number(el.scheduleWeekday.value);
+            payload.hour = Number(el.scheduleWeeklyHour.value);
+          }
+        }
+        setButtonLoading(el.saveScheduleButton, true, 'Saving…'); showFormError(el.scheduleFormError, '');
+        try { await callServer('setIntegrationSchedule', id, payload); closeScheduleModal(); await Promise.all([loadConfigurations({ quiet: true }), loadSchedulerInfo()]); showToast(payload.enabled ? 'Automatic sync schedule saved.' : 'Automatic sync disabled.'); }
+        catch (err) { showFormError(el.scheduleFormError, err.message || 'Unable to save this schedule.'); }
+        finally { setButtonLoading(el.saveScheduleButton, false); }
+      }
+
+      function bindEvents() {
+        el.mappingForm.addEventListener('submit', handleMappingSubmit);
+        el.repositoryForm.addEventListener('submit', handleRepositorySubmit);
+        el.newRepoButton.addEventListener('click', openRepositoryModal);
+        el.closeModalButton.addEventListener('click', closeRepositoryModal);
+        el.cancelRepoButton.addEventListener('click', closeRepositoryModal);
+        el.modalBackdrop.addEventListener('click', closeRepositoryModal);
+        el.streamsContainer.addEventListener('click', handleStreamAction);
+        el.refreshStreamsButton.addEventListener('click', () => loadConfigurations({ quiet: true }));
+        el.scheduleForm.addEventListener('submit', handleScheduleSubmit);
+        el.closeScheduleButton.addEventListener('click', closeScheduleModal);
+        el.cancelScheduleButton.addEventListener('click', closeScheduleModal);
+        el.scheduleBackdrop.addEventListener('click', closeScheduleModal);
+        el.scheduleEnabled.addEventListener('change', refreshScheduleFields);
+        el.scheduleType.addEventListener('change', refreshScheduleFields);
+
+        el.gasProjectLink.addEventListener('focus', event => { const original = event.target.dataset.originalUrl; if (original) event.target.value = original; });
+        el.gasProjectLink.addEventListener('blur', event => {
+          const value = event.target.value.trim(); if (!value) return;
+          event.target.dataset.originalUrl = value;
+          const inspected = inspectScriptId(value);
+          if (inspected.id) event.target.value = inspected.id;
+        });
+        el.gasProjectLink.addEventListener('input', event => { event.target.dataset.originalUrl = event.target.value; });
+
+        document.addEventListener('keydown', event => {
+          if (event.key !== 'Escape') return;
+          if (!el.repositoryModal.classList.contains('hidden')) closeRepositoryModal();
+          if (!el.scheduleModal.classList.contains('hidden')) closeScheduleModal();
+        });
+      }
+
+      async function init() {
+        populateHourOptions(); bindEvents(); refreshIcons();
+        if (LOCAL_PREVIEW) showToast('Local preview mode: server calls are simulated.');
+        await Promise.allSettled([loadRepositories(), loadSchedulerInfo(), loadConfigurations(), loadProfile()]);
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+
+</body>
+</html>
